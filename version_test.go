@@ -31,10 +31,34 @@ func TestNewVersion(t *testing.T) {
 		{"foo1.2.3", true},
 		{"1.7rc2", false},
 		{"v1.7rc2", false},
+		{"01.02.03", false},
+		{"01.00", false},
+		{"01", false},
+		{"1.02.beta", true},
+		{"foo", true},
+		{"1.02-5", false},
+		{"1.02-beta.5", false},
+		{"\n1.02", true},
+		{"1.02.0-x.Y.0+metadata", false},
+		{"1.02.0-x.Y.0+metadata-width-hypen", false},
+		{"1.2.03-rc1-with-hypen", false},
+		{"1.2.003.4", false},
+		{"1.02.0.4-x.Y.0+metadata", false},
+		{"1.02.0.4-x.Y.0+metadata-width-hypen", false},
+		{"1.02.0-X-1.2.0+metadata~dist", false},
+		{"1.02.3.4-rc1-with-hypen", false},
+		{"1.02.3.4", false},
+		{"v01.2.3", false},
+		{"foo01.2.3", true},
+		{"1.07rc2", false},
+		{"v1.07rc2", false},
 	}
 
 	for _, tc := range cases {
 		_, err := NewVersion(tc.version)
+		if tc.version == "1.2.beta"{
+			t.Log(err)
+		}
 		if tc.err && err == nil {
 			t.Fatalf("expected error for version: %s", tc.version)
 		} else if !tc.err && err != nil {
@@ -66,6 +90,9 @@ func TestVersionCompare(t *testing.T) {
 		{"1.7rc2", "1.7rc1", 1},
 		{"1.7rc2", "1.7", -1},
 		{"1.2.0", "1.2.0-X-1.2.0+metadata~dist", 1},
+		{"1.02.0", "1.2.0-X-1.2.0+metadata~dist", 1},
+		{"1.07rc2", "1.7", -1},
+		{"1.2", "1.00100101.4", -1},
 	}
 
 	for _, tc := range cases {

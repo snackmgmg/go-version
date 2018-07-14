@@ -11,6 +11,7 @@ import (
 
 // The compiled regular expression used to test the validity of a version.
 var versionRegexp *regexp.Regexp
+var unPaddingRegexp *regexp.Regexp
 
 // The raw regular expression string used for testing the validity
 // of a version.
@@ -18,6 +19,7 @@ const VersionRegexpRaw string = `v?([0-9]+(\.[0-9]+)*?)` +
 	`(-?([0-9A-Za-z\-~]+(\.[0-9A-Za-z\-~]+)*))?` +
 	`(\+([0-9A-Za-z\-~]+(\.[0-9A-Za-z\-~]+)*))?` +
 	`?`
+
 
 // Version represents a single version.
 type Version struct {
@@ -29,6 +31,7 @@ type Version struct {
 
 func init() {
 	versionRegexp = regexp.MustCompile("^" + VersionRegexpRaw + "$")
+	unPaddingRegexp = regexp.MustCompile(`0*([0-9]+)`)
 }
 
 // NewVersion parses the given version and returns a new
@@ -42,7 +45,11 @@ func NewVersion(v string) (*Version, error) {
 	segments := make([]int64, len(segmentsStr))
 	si := 0
 	for i, str := range segmentsStr {
-		val, err := strconv.ParseInt(str, 10, 64)
+		unpadded := unPadding(str)
+		if unpadded == ""{
+			return nil, fmt.Errorf("Error unpadding version: %s", str)
+		}
+		val, err := strconv.ParseInt(unpadded, 10, 64)
 		if err != nil {
 			return nil, fmt.Errorf(
 				"Error parsing version: %s", err)
@@ -75,6 +82,14 @@ func Must(v *Version, err error) *Version {
 	}
 
 	return v
+}
+
+func unPadding(str string) string {
+	unPadded := unPaddingRegexp.FindStringSubmatch(str)
+	if unPadded == nil{
+		return ""
+	}
+	return unPadded[1]
 }
 
 // Compare compares this version to another version. This
